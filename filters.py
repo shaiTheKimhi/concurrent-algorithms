@@ -77,8 +77,8 @@ def correlation_numba(kernel, image):
     x = int(kernel.shape[1] / 2)
 
     res = np.zeros(size)
-    for i in prange(size[0]):
-        for j in prange(size[1]):
+    for i in range(size[0]):
+        for j in range(size[1]):
             val = .0
             for q in range(kernel.shape[0]):
                 for k in range(kernel.shape[1]):
@@ -98,7 +98,13 @@ def sobel_operator():
         ------
         An numpy array of the image
         '''
-    raise NotImplementedError("To be implemented")
+    fil = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
+    image = imageio.imread('data/WIN_20200817_17_28_39_Pro.jpg')
+    image = np.dot(image[...,:3], [0.2989, 0.5870, 0.1140]) #converting image to grayscale
+    Gx = correlation_numba(fil, image)
+    Gy = correlation_numba(np.transpose(fil), image)
+    return (Gx**2 + Gy**2) ** 0.5
+    
 
 
 def load_image(): 

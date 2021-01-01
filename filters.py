@@ -5,6 +5,8 @@ import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from scipy.signal import convolve2d
+import timeit
 
 
 def correlation_gpu(kernel, image):
@@ -77,8 +79,8 @@ def correlation_numba(kernel, image):
     x = int(kernel.shape[1] / 2)
 
     res = np.zeros(size)
-    for i in range(size[0]):
-        for j in range(size[1]):
+    for i in prange(size[0]):
+        for j in prange(size[1]):
             val = .0
             for q in range(kernel.shape[0]):
                 for k in range(kernel.shape[1]):
@@ -99,8 +101,7 @@ def sobel_operator():
         An numpy array of the image
         '''
     fil = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
-    image = imageio.imread('data/WIN_20200817_17_28_39_Pro.jpg')
-    image = np.dot(image[...,:3], [0.2989, 0.5870, 0.1140]) #converting image to grayscale
+    image = load_image()
     Gx = correlation_numba(fil, image)
     Gy = correlation_numba(np.transpose(fil), image)
     return (Gx**2 + Gy**2) ** 0.5
@@ -109,7 +110,7 @@ def sobel_operator():
 
 def load_image(): 
     fname = 'data/image.jpg'
-    pic = imageio.imread(path)
+    pic = imageio.imread(fname)
     to_gray = lambda rgb : np.dot(rgb[... , :3] , [0.299 , 0.587, 0.114])
     gray_pic = to_gray(pic)
     return gray_pic
@@ -126,12 +127,35 @@ def show_image(image):
     plt.imshow(image, cmap='gray')
     plt.show()
 
+def sobel_test(flag):
+    kernel = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
+    image = load_image()
+    if flag == 'CPU':
+        flipped_kernel = np.rot90(kernel, 2)
+        Gx = convolve2d(flipped_kernel, image)
+        Gy = convolve2d(np.transpose(flipped_kernel), image)
+        return (Gx**2 + Gy**2) ** 0.5
+    elif flag == 'NUMBA':
+        Gx = correlation_numba(kernel, image)
+        Gy = correlation_numba(np.transpose(kernel), image)
+        return (Gx**2 + Gy**2) ** 0.5
+    elif flag == 'GPU':
+        Gx = correlation_gpu(kernel, image)
+        Gy = correlation_gpu(np.transpose(kernel), image)
+        return (Gx**2 + Gy**2) ** 0.5
+
 # Note use image show on your local computer to view the results 
 def compare_sobel():
     '''run sobel_operator with different correlation functions (CPU, numba, GPU)
         '''
+    def timer(f, flag):
+        return min(timeit.Timer(lambda: f(flag)).repeat(2, 1))
+    
     pic = load_image
     res = pic
+    print(f"CPU:{timer(sobel_test, 'CPU')}")
+    print(f"Numba:{timer(sobel_test, 'NUMBA')}")
+    #print(f"GPU:{timer(sobel_test, 'GPU')}")
+    
     # your implementation
     # show_image(res)
-    raise NotImplementedError("To be implemented")

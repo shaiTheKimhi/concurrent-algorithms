@@ -68,7 +68,7 @@ def corr_comparison():
     def timer(kernel, f):
         return min(timeit.Timer(lambda: f(kernel, image)).repeat(10, 1))
 
-    '''
+    
     print('CPU 3X3 kernel:', timer(flipped_edge_kernel, convolve2d))
     print('Numba 3X3 kernel:', timer(shapen_kernel, correlation_numba))
     print('CUDA 3X3 kernel:', timer(shapen_kernel, correlation_gpu))
@@ -83,10 +83,10 @@ def corr_comparison():
     print('Numba 7X7 kernel:', timer(edge_kernel, correlation_numba))
     print('CUDA 7X7 kernel:', timer(edge_kernel, correlation_gpu))
     print("---------------------------------------------")
-    '''
-    #print(correlation_numba(blur_kernel, image))
-    #print(convolve2d(blur_kernel, image))
-    print(correlation_numba(edge_kernel, image) - convolve2d(edge_kernel,image))
+    
+    
+    
+    
 
 
 if __name__ == '__main__':

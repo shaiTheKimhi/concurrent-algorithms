@@ -22,9 +22,9 @@ def correlation_gpu(kernel, image):
     ------
     An numpy array of same shape as image
     '''
-    num_threads = 100
-    num_blocks = 100
-    batchsize = (math.ceil(image.shape[0] / num_blocks), math.ceil(image.shape[1] / num_threads))
+    num_threads = 100#image.shape[1]
+    num_blocks = 100#image.shape[0]
+    batchsize = (math.ceil(image.shape[0] // num_blocks) + 1, math.ceil(image.shape[1] // num_threads) + 1)
     y = int(kernel.shape[0] / 2)
     x = int(kernel.shape[1] / 2)
 
@@ -46,18 +46,15 @@ def correlation_kernel(kernel, image, result, ybatch, xbatch, y_move, x_move):
     j = cuda.threadIdx.x
     #we will have permanent 1000 threads on 1000 blocks
     for y in range(i*ybatch, (i+1) * ybatch):
-        if y >= image.shape[0]:
-            break
-        for x in range(j*xbatch, (j+1) * xbatch):
-            if x >= image.shape[1]:
-                break
-            for q in range(kernel.shape[0]):
-                for k in range(kernel.shape[1]):
-                    index = (i - y_move + q, j - x_move + k)
-                    if 0 <= index[0] < image.shape[0] and 0 <= index[1] < image.shape[1]:
-                        cuda.atomic.add(result[y], x, kernel[q][k] * image[i - y_move + q][j - x_move + k])
-                        #result[y][x] += kernel[q][k] * image[i - y + q][j - x + k]
-
+        if y < image.shape[0]:
+            for x in range(j*xbatch, (j+1) * xbatch):
+                if  x < image.shape[1]:
+                    for q in range(kernel.shape[0]):
+                        for k in range(kernel.shape[1]):
+                            index = (y - y_move + q, x - x_move + k)
+                            if 0 <= index[0] < image.shape[0] and 0 <= index[1] < image.shape[1]:
+                                cuda.atomic.add(result[y], x, kernel[q][k] * image[y - y_move + q][x - x_move + k])
+                                #result[y][x] += kernel[q][k] * image[i - y + q][j - x + k]
 
 
 @njit
@@ -155,7 +152,7 @@ def compare_sobel():
     res = pic
     print(f"CPU:{timer(sobel_test, 'CPU')}")
     print(f"Numba:{timer(sobel_test, 'NUMBA')}")
-    #print(f"GPU:{timer(sobel_test, 'GPU')}")
+    print(f"GPU:{timer(sobel_test, 'GPU')}")
     
     # your implementation
     # show_image(res)
